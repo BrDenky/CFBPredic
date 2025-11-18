@@ -5,3 +5,5 @@ matplotlib
 seaborn
 statsmodels
 patsy
+tatsmodels pmdarima
+

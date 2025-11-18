@@ -1,0 +1,196 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.21 of 2022/01/12
+%
+\documentclass[runningheads]{llncs}
+%
+\usepackage[T1]{fontenc}
+% T1 fonts will be used to generate the final print and online PDFs,
+% so please use T1 fonts in your manuscript whenever possible.
+% Other font encondings may result in incorrect characters.
+%
+\usepackage{graphicx}
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following two lines
+% to display URLs in blue roman font according to Springer's eBook style:
+%\usepackage{color}
+%\renewcommand\UrlFont{\color{blue}\rmfamily}
+%
+\begin{document}
+%
+\title{Short-term forecast for Ecuador's Basic Family Basket (CBF).\thanks{Supported by organization x.}}
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Mateo Pilaquinga\inst{1}\orcidID{0000-1111-2222-3333}
+\and
+Rolando Z\inst{1}\orcidID{1111-2222-3333-4444}}
+\authorrunning{M. Pilaquinga et al.}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{Universidad Yachay Tech, Ibarra, Urcuquí, Ecuador
+\email{\{mateo.pilaquinga,rolando.z\}@yachaytech.edu.ec}}
+%
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+The abstract should briefly summarize the contents of the paper in
+150--250 words.
+
+\keywords{First keyword  \and Second keyword \and Another keyword.}
+\end{abstract}
+%
+%
+%
+\section{Identificación del objeto de estudio}
+
+La variabilidad mensual del costo de la Canasta Familiar Básica en Ecuador tanto para el sector público como el sector privado es uno de los índices más importantes con respecto a la planificación y toma de decisiones en áreas como el valor salarial, subsidios, transferencias, estados de contratos y ajustes de precios. Sin un pronóstico reproducible y transparente, estas organizaciones operan con un alto riesgo al momento de establecer precios y costos, afectando directamente el poder adquisitivo y a una economía sana de los ecuatorianos.
+
+\subsection{Criticidad del problema para las organizaciones}
+
+La CFB es un indicativo directo del costo de vida de las personas. Ayuda a determinar el poder adquisitivo y reducir vulnerabilidades. El anticipar una trayectoria confiable de su valor permite mantener a la par los ingresos y los costos esenciales, que para las entidades públicas como ministerios o gobiernos locales es de suma importancia programar subsidios, compras públicas, tarifas, alinear estrategias de precios, volúmenes de compra y capital. Sin una base confiable, se enfrentan a decisiones reactivas, mayor volatilidad de precios, tensiones salariales o el uso ineficiente de recursos públicos, resultando en pérdida de bienestar, menor competitividad y menor efectividad en los programas de protección social.
+
+Con la implementación de un modelo predictivo se aporta trazabilidad para defender estas decisiones así como también la coordinación entre instituciones, previniendo sobre o infra abastecimiento, pérdidas por caducidad o precios fuera de mercado. Este enfoque en inteligencia de datos, documentado y reproducible, mejora la confianza de los actores. Con la presentación de métricas de error, métricas de comparación se aumenta la calidad técnica de las decisiones y futuras auditorías.
+
+
+
+\section{Planteamiento del problema}
+
+\subsection{Naturaleza del problema}
+
+La naturaleza del problema radica en el pronóstico de series de tiempo, el objetivo es estimar la trayectoria mensual futura de la CFB a corto plazo.
+
+\subsection{Justificación del enfoque analítico (IA/Ciencia de Datos)}
+
+El enfoque analítico basado en Inteligencia Artificial y Ciencia de Datos se justifica con la necesidad de facilitar decisiones informadas con respecto al ajuste de precios, negociación salarial, programación de compras públicas y diseño de escenarios para manejo de riesgos con la integración de pruebas estadísticas tales como la estacionariedad, estacionalidad, autocorrelación y modelos paramétricos, favoreciendo interpretabilidad, transparencia y reproducibilidad para rendición de cuentas al documentar datos, transformaciones y ecuaciones del modelo.
+
+\subsection{Objetivo general del proyecto}
+
+Desarrollar un modelo estadístico reproducible que pronostique el costo mensual de la Canasta Familiar Básica en Ecuador con resultados a corto plazo y escenarios de riesgo que se traduzcan en recomendaciones organizacionales aplicables.
+
+\subsection{Objetivos específicos}
+
+\begin{enumerate}
+\item Documentar la base de datos oficial proporcionada por el INEC descargando los archivos CSV oficiales, control de calidad y limpieza de datos, para así garantizar trazabilidad y reproducibilidad en el modelo final.
+
+\item Realizar un análisis exploratorio y de componentes representada en la serie de tiempo contenida en la base de datos oficial, usando técnicas de tendencia y estacionalidad ACF y PACF con pruebas de estacionariedad para así fundamentar correctamente la elección del modelo final y las transformaciones ejecutadas.
+
+\item Diseñar al menos dos modelos de pronóstico de corto plazo aplicando formulación paramétrica con ecuaciones, función de pérdida y procedimientos de estimación, considerando estacionalidad y calendarios con intervalos de predicción para obtener pronósticos mensuales consistentes y cuantificar la incertidumbre.
+
+\item Evaluar el desempeño predictivo de los modelos en validación temporal fuera de muestra con ventanas que muestren métricas como MAE, RMSE, MAPE para así elegir el modelo con mejor capacidad predictiva y estabilidad para un uso real.
+
+\item Interpretar los resultados en implicaciones y recomendaciones aplicables, con la elaboración de escenarios base optimistas y estresado, tablas y gráficos exportados y una síntesis de los hallazgos para proponer acciones concretas en los sectores basada en evidencia.
+\end{enumerate}
+
+% \section{First Section}
+% \subsection{A Subsection Sample}
+% Please note that the first paragraph of a section or subsection is
+% not indented. The first paragraph that follows a table, figure,
+% equation etc. does not need an indent, either.
+
+% Subsequent paragraphs, however, are indented.
+
+% \subsubsection{Sample Heading (Third Level)} Only two levels of
+% headings should be numbered. Lower level headings remain unnumbered;
+% they are formatted as run-in headings.
+
+% \paragraph{Sample Heading (Fourth Level)}
+% The contribution should contain no more than four levels of
+% headings. Table~\ref{tab1} gives a summary of all heading levels.
+
+% \begin{table}
+% \caption{Table captions should be placed above the
+% tables.}\label{tab1}
+% \begin{tabular}{|l|l|l|}
+% \hline
+% Heading level &  Example & Font size and style\\
+% \hline
+% Title (centered) &  {\Large\bfseries Lecture Notes} & 14 point, bold\\
+% 1st-level heading &  {\large\bfseries 1 Introduction} & 12 point, bold\\
+% 2nd-level heading & {\bfseries 2.1 Printing Area} & 10 point, bold\\
+% 3rd-level heading & {\bfseries Run-in Heading in Bold.} Text follows & 10 point, bold\\
+% 4th-level heading & {\itshape Lowest Level Heading.} Text follows & 10 point, italic\\
+% \hline
+% \end{tabular}
+% \end{table}
+
+
+% \noindent Displayed equations are centered and set on a separate
+% line.
+% \begin{equation}
+% x + y = z
+% \end{equation}
+% Please try to avoid rasterized images for line-art diagrams and
+% schemas. Whenever possible, use vector graphics instead (see
+% Fig.~\ref{fig1}).
+
+% \begin{figure}
+% \includegraphics[width=\textwidth]{fig1.eps}
+% \caption{A figure caption is always placed below the illustration.
+% Please note that short captions are centered, while long ones are
+% justified by the macro package automatically.} \label{fig1}
+% \end{figure}
+
+% \begin{theorem}
+% This is a sample theorem. The run-in heading is set in bold, while
+% the following text appears in italics. Definitions, lemmas,
+% propositions, and corollaries are styled the same way.
+% \end{theorem}
+% %
+% % the environments 'definition', 'lemma', 'proposition', 'corollary',
+% % 'remark', and 'example' are defined in the LLNCS documentclass as well.
+% %
+% \begin{proof}
+% Proofs, examples, and remarks have the initial word in italics,
+% while the following text appears in normal font.
+% \end{proof}
+% For citations of references, we prefer the use of square brackets
+% and consecutive numbers. Citations using labels or the author/year
+% convention are also acceptable. The following bibliography provides
+% a sample reference list with entries for journal
+% articles~\cite{ref_article1}, an LNCS chapter~\cite{ref_lncs1}, a
+% book~\cite{ref_book1}, proceedings without editors~\cite{ref_proc1},
+% and a homepage~\cite{ref_url1}. Multiple citations are grouped
+% \cite{ref_article1,ref_lncs1,ref_book1},
+% \cite{ref_article1,ref_book1,ref_proc1,ref_url1}.
+
+% \subsubsection{Acknowledgements} Please place your acknowledgments at
+% the end of the paper, preceded by an unnumbered run-in heading (i.e.
+% 3rd-level heading).
+
+%
+% ---- Bibliography ----
+%
+% BibTeX users should specify bibliography style 'splncs04'.
+% References will then be sorted and formatted in the correct style.
+%
+% \bibliographystyle{splncs04}
+% \bibliography{mybibliography}
+%
+\begin{thebibliography}{8}
+\bibitem{ref_article1}
+Author, F.: Article title. Journal \textbf{2}(5), 99--110 (2016)
+
+\bibitem{ref_lncs1}
+Author, F., Author, S.: Title of a proceedings paper. In: Editor,
+F., Editor, S. (eds.) CONFERENCE 2016, LNCS, vol. 9999, pp. 1--13.
+Springer, Heidelberg (2016). \doi{10.10007/1234567890}
+
+\bibitem{ref_book1}
+Author, F., Author, S., Author, T.: Book title. 2nd edn. Publisher,
+Location (1999)
+
+\bibitem{ref_proc1}
+Author, A.-B.: Contribution title. In: 9th International Proceedings
+on Proceedings, pp. 1--2. Publisher, Location (2010)
+
+\bibitem{ref_url1}
+LNCS Homepage, \url{http://www.springer.com/lncs}. Last accessed 4
+Oct 2017
+\end{thebibliography}
+\end{document}
