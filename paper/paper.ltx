@@ -1,196 +1,937 @@
-% This is samplepaper.tex, a sample chapter demonstrating the
-% LLNCS macro package for Springer Computer Science proceedings;
-% Version 2.21 of 2022/01/12
-%
-\documentclass[runningheads]{llncs}
-%
-\usepackage[T1]{fontenc}
-% T1 fonts will be used to generate the final print and online PDFs,
-% so please use T1 fonts in your manuscript whenever possible.
-% Other font encondings may result in incorrect characters.
-%
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
 \usepackage{graphicx}
-% Used for displaying a sample figure. If possible, figure files should
-% be included in EPS format.
-%
-% If you use the hyperref package, please uncomment the following two lines
-% to display URLs in blue roman font according to Springer's eBook style:
-%\usepackage{color}
-%\renewcommand\UrlFont{\color{blue}\rmfamily}
-%
+\usepackage[T1]{fontenc}
+\usepackage[htt]{hyphenat}
+
+\usepackage{float}
+\usepackage{stfloats}
+
+\flushbottom
+
+\setlength{\textfloatsep}{6pt}
+\setlength{\floatsep}{6pt}
+\setlength{\intextsep}{6pt}
+
+\makeatletter
+\def\fps@figure{!htbp}
+\makeatother
+
+
+\usepackage{textcomp}
+\usepackage{xcolor}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
-%
-\title{Short-term forecast for Ecuador's Basic Family Basket (CBF).\thanks{Supported by organization x.}}
-%
-%\titlerunning{Abbreviated paper title}
-% If the paper title is too long for the running head, you can set
-% an abbreviated paper title here
-%
-\author{Mateo Pilaquinga\inst{1}\orcidID{0000-1111-2222-3333}
-\and
-Rolando Z\inst{1}\orcidID{1111-2222-3333-4444}}
-\authorrunning{M. Pilaquinga et al.}
-% First names are abbreviated in the running head.
-% If there are more than two authors, 'et al.' is used.
-%
-\institute{Universidad Yachay Tech, Ibarra, Urcuquí, Ecuador
-\email{\{mateo.pilaquinga,rolando.z\}@yachaytech.edu.ec}}
-%
-\maketitle              % typeset the header of the contribution
-%
+
+\title{Food CPI forecast with LSTM and incidence analysis\\
+% {\footnotesize \textsuperscript{*}Note: Sub-titles are not captured in Xplore and
+% should not be used}
+}
+
+\author{\IEEEauthorblockN{1\textsuperscript{st} Mateo Pilaquinga}
+\IEEEauthorblockA{\textit{School of Mathematical and Computational Sciences} \\
+\textit{Yachay Tech University}\\
+Urcuquí, Ecuador \\
+mateo.pilaquinga@yachaytech.edu.ec \\
+ORCID: 0000-0002-4666-4414}
+}
+
+\maketitle
+
 \begin{abstract}
-The abstract should briefly summarize the contents of the paper in
-150--250 words.
-
-\keywords{First keyword  \and Second keyword \and Another keyword.}
+This paper develops an integrated framework to forecast Ecuador’s Food Consumer Price Index (CPI-Food) and to diagnose the subgroups that exert the greatest inflationary pressure, combining deep learning with nonlinear regression and incidence analysis. Using official monthly series from the National Institute of Statistics and Census (INEC) for CPI-Food and eleven COICOP food subindices spanning January 2006 to October 2025, the study first models the aggregate index as a multivariate time series characterized by strong trends, seasonality, shocks, and marked nonstationarity. A multi-step Long Short-Term Memory (LSTM) network is specified to predict horizons of 3–6 months from sliding temporal windows, with standardized inputs and a single output layer that jointly estimates future values. On the test set, the LSTM achieves low error levels (RMSE = 1.18, MAPE = 1.01\%), closely reproducing the level, slope, and seasonal behavior of CPI-Food and maintaining stable accuracy as the forecast horizon lengthens, while the largest residuals are concentrated around periods of exogenous shocks. To quantify the internal structure of food inflation, the second stage constructs a Random Forest model on monthly variation rates of CPI-Food and its subindices, revealing that a small subset of components—especially bread and cereals, non-alcoholic beverages, meat, and the general CPI—accounts for most of the explained variance, whereas more volatile categories such as fruits, vegetables, fish, and oils and fats contribute more marginally in aggregate terms. The joint use of LSTM for forecasting and Random Forest for incidence analysis yields a data-driven early warning scheme that can support public institutions and private agents in anticipating short-term food inflation, prioritizing critical subgroups, and designing more proactive food security and price-stabilization policies. 
 \end{abstract}
-%
-%
-%
-\section{Identificación del objeto de estudio}
 
-La variabilidad mensual del costo de la Canasta Familiar Básica en Ecuador tanto para el sector público como el sector privado es uno de los índices más importantes con respecto a la planificación y toma de decisiones en áreas como el valor salarial, subsidios, transferencias, estados de contratos y ajustes de precios. Sin un pronóstico reproducible y transparente, estas organizaciones operan con un alto riesgo al momento de establecer precios y costos, afectando directamente el poder adquisitivo y a una economía sana de los ecuatorianos.
+\begin{IEEEkeywords}
+Food inflation; CPI-Food; Time-series forecasting; LSTM; Random Forest; Feature importance; Inflation incidence; Macroeconomic indicators; Ecuador; Multivariate modeling; Deep learning; Nonlinear regression; Price stability; Cost of living.
+\end{IEEEkeywords}
 
-\subsection{Criticidad del problema para las organizaciones}
-
-La CFB es un indicativo directo del costo de vida de las personas. Ayuda a determinar el poder adquisitivo y reducir vulnerabilidades. El anticipar una trayectoria confiable de su valor permite mantener a la par los ingresos y los costos esenciales, que para las entidades públicas como ministerios o gobiernos locales es de suma importancia programar subsidios, compras públicas, tarifas, alinear estrategias de precios, volúmenes de compra y capital. Sin una base confiable, se enfrentan a decisiones reactivas, mayor volatilidad de precios, tensiones salariales o el uso ineficiente de recursos públicos, resultando en pérdida de bienestar, menor competitividad y menor efectividad en los programas de protección social.
-
-Con la implementación de un modelo predictivo se aporta trazabilidad para defender estas decisiones así como también la coordinación entre instituciones, previniendo sobre o infra abastecimiento, pérdidas por caducidad o precios fuera de mercado. Este enfoque en inteligencia de datos, documentado y reproducible, mejora la confianza de los actores. Con la presentación de métricas de error, métricas de comparación se aumenta la calidad técnica de las decisiones y futuras auditorías.
+% \section{Introduction}
+\section{Review of related work}
+The recent literature on economic forecasting and price-index prediction shows a clear shift from traditional linear models toward machine-learning and recurrent-neural-network approaches, which directly shapes the methodological decisions of this project. Works such as \textit{Sibai et al. (2024)} \cite{b1} compare MLP, KNN and Random Forest for Consumer Price Index (CPI) prediction, evidencing that nonlinear models substantially reduce MSE, RMSE and MAE, although their generalization deteriorates beyond 24-month horizons—an insight that supports our focus on short-term forecasting for the Canasta Familiar Básica (CFB). Likewise, \textit{Torres et al. (2020)} \cite{b2} highlight the strength of RNNs in monthly price series, reaching accuracies above 94\% for the Brazilian basic basket and capturing abrupt market shifts, a relevant property given the historical volatility of Ecuador’s CFB and episodes of imported inflation. Research centered on Ecuador, such as \textit{Riofrío (2024)} \cite{b3}, confirms strong seasonality and nonlinear relations between household income and basket cost, where SVR and MLP achieve low MAPE, reinforcing the need to evaluate hybrid and nonlinear models. In addition, \textit{Yang and Guo (2021)} \cite{b4} show that deep architectures like LSTM and GRU outperform ARIMA and Bayesian models across MSE, SMAPE and MAPE by capturing long-range temporal dependencies, justifying their inclusion as key candidates in our pipeline. Studies specifically on Ecuadorian CPI, such as \textit{Riofrío et al. (2020)} \cite{b5}, further indicate that LSTM and SVR excel for macroeconomic forecasts under 12 months, supporting the idea that Ecuadorian dynamics align better with nonlinear models—patterns that extend to the CFB. Consistently, the TICEC 2023 study by \textit{Riofrío, Infante and Hernández} \cite{b6} introduces modern techniques such as FFT, 4Theta and the Darts library, reporting low MAE and strong robustness for Ecuadorian monthly series from 2001–2023, guiding us toward methods that integrate decomposition, smoothing and weak periodic patterns, features also present in the CFB. Finally, \textit{Nannapaneni and Kulkarni (2023)} \cite{b7} emphasize hybrid ensembles combining neural networks with linear components like ARIMA or SARIMA for nonlinear and chaotic series, achieving strong short-term performance. Altogether, this body of work not only supports our model selection but also establishes methodological principles: using short horizons, prioritizing nonlinear and hybrid models, and applying rigorous metrics such as MSE, MAE, MAPE and SMAPE to obtain reliable forecasts of Ecuador’s Canasta Familiar Básica.
 
 
-
-\section{Planteamiento del problema}
-
-\subsection{Naturaleza del problema}
-
-La naturaleza del problema radica en el pronóstico de series de tiempo, el objetivo es estimar la trayectoria mensual futura de la CFB a corto plazo.
-
-\subsection{Justificación del enfoque analítico (IA/Ciencia de Datos)}
-
-El enfoque analítico basado en Inteligencia Artificial y Ciencia de Datos se justifica con la necesidad de facilitar decisiones informadas con respecto al ajuste de precios, negociación salarial, programación de compras públicas y diseño de escenarios para manejo de riesgos con la integración de pruebas estadísticas tales como la estacionariedad, estacionalidad, autocorrelación y modelos paramétricos, favoreciendo interpretabilidad, transparencia y reproducibilidad para rendición de cuentas al documentar datos, transformaciones y ecuaciones del modelo.
-
-\subsection{Objetivo general del proyecto}
-
-Desarrollar un modelo estadístico reproducible que pronostique el costo mensual de la Canasta Familiar Básica en Ecuador con resultados a corto plazo y escenarios de riesgo que se traduzcan en recomendaciones organizacionales aplicables.
-
-\subsection{Objetivos específicos}
-
-\begin{enumerate}
-\item Documentar la base de datos oficial proporcionada por el INEC descargando los archivos CSV oficiales, control de calidad y limpieza de datos, para así garantizar trazabilidad y reproducibilidad en el modelo final.
-
-\item Realizar un análisis exploratorio y de componentes representada en la serie de tiempo contenida en la base de datos oficial, usando técnicas de tendencia y estacionalidad ACF y PACF con pruebas de estacionariedad para así fundamentar correctamente la elección del modelo final y las transformaciones ejecutadas.
-
-\item Diseñar al menos dos modelos de pronóstico de corto plazo aplicando formulación paramétrica con ecuaciones, función de pérdida y procedimientos de estimación, considerando estacionalidad y calendarios con intervalos de predicción para obtener pronósticos mensuales consistentes y cuantificar la incertidumbre.
-
-\item Evaluar el desempeño predictivo de los modelos en validación temporal fuera de muestra con ventanas que muestren métricas como MAE, RMSE, MAPE para así elegir el modelo con mejor capacidad predictiva y estabilidad para un uso real.
-
-\item Interpretar los resultados en implicaciones y recomendaciones aplicables, con la elaboración de escenarios base optimistas y estresado, tablas y gráficos exportados y una síntesis de los hallazgos para proponer acciones concretas en los sectores basada en evidencia.
-\end{enumerate}
-
-% \section{First Section}
-% \subsection{A Subsection Sample}
-% Please note that the first paragraph of a section or subsection is
-% not indented. The first paragraph that follows a table, figure,
-% equation etc. does not need an indent, either.
-
-% Subsequent paragraphs, however, are indented.
-
-% \subsubsection{Sample Heading (Third Level)} Only two levels of
-% headings should be numbered. Lower level headings remain unnumbered;
-% they are formatted as run-in headings.
-
-% \paragraph{Sample Heading (Fourth Level)}
-% The contribution should contain no more than four levels of
-% headings. Table~\ref{tab1} gives a summary of all heading levels.
-
-% \begin{table}
-% \caption{Table captions should be placed above the
-% tables.}\label{tab1}
-% \begin{tabular}{|l|l|l|}
-% \hline
-% Heading level &  Example & Font size and style\\
-% \hline
-% Title (centered) &  {\Large\bfseries Lecture Notes} & 14 point, bold\\
-% 1st-level heading &  {\large\bfseries 1 Introduction} & 12 point, bold\\
-% 2nd-level heading & {\bfseries 2.1 Printing Area} & 10 point, bold\\
-% 3rd-level heading & {\bfseries Run-in Heading in Bold.} Text follows & 10 point, bold\\
-% 4th-level heading & {\itshape Lowest Level Heading.} Text follows & 10 point, italic\\
-% \hline
-% \end{tabular}
-% \end{table}
+\section{Identification of the problem}
+The CPI for Food (Consumer Price Index) is the official indicator that summarizes monthly food price behavior and directly affects the cost of the Basic Family Basket. Studying its dynamics is of great importance for social and economic planning, especially for low-income Ecuadorian households and social protection programs. 
+Food inflation in Ecuador shows episodes of high volatility, which are associated with external and internal conflicts such as supply chain disruptions, agricultural supply shocks, variations in international prices, and extreme weather events.
+This translates into abrupt and non-linear behaviors that are not well captured or anticipated by traditional monitoring models. The problem is also exacerbated by the need to disaggregate the aggregate index, as some subgroups may have a disproportionate impact on total food inflation.
+It is therefore important to develop a model that improves short-term forecasting and can identify and quantify specific sources of pressure.
 
 
-% \noindent Displayed equations are centered and set on a separate
-% line.
-% \begin{equation}
-% x + y = z
-% \end{equation}
-% Please try to avoid rasterized images for line-art diagrams and
-% schemas. Whenever possible, use vector graphics instead (see
-% Fig.~\ref{fig1}).
 
-% \begin{figure}
-% \includegraphics[width=\textwidth]{fig1.eps}
-% \caption{A figure caption is always placed below the illustration.
-% Please note that short captions are centered, while long ones are
-% justified by the macro package automatically.} \label{fig1}
+ The cost of food is directly related to food security and poverty, where an unexpected increase can result in the vulnerability of thousands of families below the poverty line. Knowing this prediction is of utmost importance for entities such as MIES or NGOs that have social programs, mitigating the impact before the crisis materializes. Identifying these pressure points is extremely useful for the Ministry of Agriculture or local governments in designing targeted support policies such as temporary subsidies, logistical improvements, or market regulation. On the other hand, for logistics chains and supermarkets, it helps with inventory planning and negotiations with suppliers. Anticipation reduces risk and volatility in the supply chain.
+
+\section{Problem statement}
+The problem with predicting the CPI food price is time series modeling, which is characterized by monthly data with marked nonlinear seasonality. Traditional statistical methods such as ARIMA fail to capture these complex and abrupt dynamic relationships caused by the aforementioned internal and external events.
+
+Based on this behavior, the main algorithm to be used for short-term forecasting (3 to 6 months) is LSTM (Long Short-Term Memory). This is a neural network specialized in remembering information with the ability to identify how past events have or may have an effect on the current context. Unlike other models that forget past events and fail to capture socioeconomic complexity.
+
+Adopting an approach based on artificial intelligence and machine learning is justified by the literature review and the improved predictive and diagnostic capabilities that traditional models lack. ML-based models are better at modeling the nonlinear relationships and complex patterns that define food inflation. Due to the nature of the project, algorithms such as Random Forest are also required to identify the drivers of food CPI inflation. By using the prices of food subgroups, it is possible to accurately determine which products have the greatest weight or influence.
+
+\subsection{Objectives}
+In this paper, the overall objective is to develop a short-term prediction model based on machine learning for the CPI value in the food sector, in an explainable and quantifiable manner, as well as to identify the product subgroups that drive this variation, with the aim of providing technical inputs for proper planning in the country's food security.
+
+To achieve the project design, the following specific objectives are proposed.
+
+Process the monthly historical series of the CPI-Food and its sub-indices, by breaking them down into trends, seasonality, and shock inspection, for the LSTM neural network training process.
+
+Identify the influence of food sub-indices on the variation of the CPI-Food by implementing regression algorithms such as Random Forest in order to establish an accurate diagnosis of the items that generate the greatest inflationary pressure.
+
+Evaluate the prediction accuracy of the 3- to 6-month LSTM model using absolute and quadratic error metrics (MSE, MAE, and RMSE) to validate its usefulness as an economic forecasting tool.
+
+\section{Justification and application of the methodology to be used}
+\subsection{Data collection}
+The data necessary for the study was collected from the National Institute of Statistics and Census (INEC), which is the official body responsible for constructing the CPI in Ecuador. The data was obtained directly from its institutional statistical repository, corresponding to time series covering the period from January 2006 to October 2025, which guarantees historical depth for the predictive model.
+
+The first set corresponds to the CPI-Food, which is the main series that acts as the dependent variable or target for the LSTM-based forecasting model.
+
+The second set corresponds to the price sub-indices of eleven food subgroups according to the national COICOP classification (Classification of Individual Consumption by Purpose), which is a United Nations standard system for classifying and analyzing consumer spending. These are used as independent variables in the Random Forest regression model and in the SHAP attribution analysis to identify the items with the highest inflationary pressure.
+
+The official INEC documentation guarantees methodological consistency, objectivity, and national representativeness, which is essential to ensure the validity of the results and conclusions in economic analysis and in the design of public policies related to food security.
+
+\subsection{Data cleaning, preprocessing and transformation.}
+
+To assure the quality of the suggested model, it is necessary to clean, preprocess, and transform the data.
+
+\subsection{Loading the databases}
+The databases from INEC were loaded, one file containing the CPI for the food group and another file containing the price indices for food products at the class level. This separation is due to the way in which the institution publishes the information. This is the starting point for the objective of integrating the two into a single dataset built around the temporal dimension.
+
+\subsection{Initial Transformations}
+The date information was normalized. The months were in Spanish text format, so we mapped the names of the months to numerical values. Some grammatical errors were found and corrected. Then, a variable named date was constructed in datetime format using the first day of each month as a convention. This procedure is justified in order to chronologically order the observations, generate time indices, and apply time series techniques. It also allows us to establish a time key that will later be used as a reference to merge both data sets correctly.
+
+\subsection{Food CPI}
+In this dataset, the first step is to filter the indicators, retaining only those observations where the indicator type corresponds to “Index.” This is because the original file also includes percentage variations and other derivatives that are not suitable for training the LSTM network. Next, only the columns corresponding to the date and the index value were retained. For better management, the latter was renamed ipc alimentos index.
+
+
+\subsection{Food subgroups}
+The product dataset underwent a more thorough cleaning process. As a first step, rows with the indicator “Index” and the disaggregation level “Class” were filtered, representing the most disaggregated level of the COICOP consumption classification available in the database. This methodological action corresponds to the interest in capturing information on food groups at the highest possible level of detail, which is an important requirement for identifying sources of inflationary pressure at the subcategory level.
+
+The variable names were standardized, as the original columns included special characters. The fields were renamed with lowercase letters, $snake_case$, and quotation marks, periods, and commas were removed. Then, only the columns for date, product class description, and index value, which are essential for the analysis, were retained. The format was also changed from long to wide using a table where each row represents a month and each column represents the price index for each food category. This restructuring is justified by the type of model to be used. Algorithms such as LSTM, Random Forest, and SHAP require matrices where each row (time step) considers all variables simultaneously.
+
+These enhancements assure code reproducibility, minimize coding difficulties, and provide compatibility with varied execution situations.
+
+
+\subsection{Integration of the two sets}
+The dataset used is a monthly multivariate time series covering January 2006 to October 2025 with 238 observations, where each row represents a month and each column corresponds to a specific component of food inflation.
+All variables are from Ecuador's INEC and are expressed as price indices normalized to the official CPI base year. These monthly indices measure the evolution over time of the general price level that households must pay for a representative basket of consumer goods and services.
+Each sub-index reflects, by means of an index number, the weighted average level of prices relative to historical average expenditure. Using the INEC's current methodology with base year 2014 = 100, all index values are compared to this level. Values higher than this base indicate that prices are higher than those of the base year, while lower values indicate lower prices.
+The nature of this data allows for the analysis of inflation, changes in purchasing power, and the relative incidence of food subgroups over time, but it has the limitation of not being able to directly estimate the cost in dollars in any physical unit.
+
+
+\subsection{Identification and description of variables}
+The dataset used is a monthly multivariate time series covering January 2006 to October 2025 with 238 observations. All variables are from Ecuador's INEC and are expressed as price indices normalized to the official CPI base year.
+
+Each row represents a month and each column corresponds to a specific component of food inflation. This allows us to address the CPI-Food forecast and the impact of the sub-indices on the aggregate index.
+
+\subsection{Model variables}
+There are three types of variables: the dependent variable associated with the aggregate level of food prices (CPI), the independent variables representing the behavior of different food product groups, and the time variable that indexes each observation in the series.
+
+\subsection{Dependent variable}
+
+\begin{table}[htbp]
+\caption{Dependent Variable: Food CPI}
+\label{tab:ipc_alimentos_index_compact}
+\centering
+\begin{tabular}{@{}p{1.4cm} p{2.4cm} p{0.5cm} p{1cm} p{0.5cm} p{1cm}@{}}
+\hline
+\textbf{Var.} & \textbf{Description} & \textbf{Type} & \textbf{Range} & \textbf{Mean} & \textbf{Std.} \\ \hline
+
+ipc\_alim\_idx &
+CPI for the Food group &
+f64 &
+60.91--122.25 &
+97.41 &
+16.79 \\ \hline
+
+\end{tabular}
+\end{table}
+
+
+
+This value summarizes the monthly evolution of the relative cost of the food basket included in the national CPI. It is the dependent variable for both the LSTM forecasting model and the regression model that seeks to explain its variation based on food sub-indices.
+
+\subsection{Independent Variables}
+These correspond to the food sub-indices of eleven product groups. These variables are used as regressors in the Random Forest model.
+
+\begin{table*}[htbp]
+\caption{Description of Food IPC Subcomponent Variables}
+\label{tab:ipc_subcomponents}
+\centering
+\begin{tabular}{@{}p{4cm} p{5cm} p{1.5cm} p{2.2cm} p{1.5cm} p{1.8cm}@{}}
+\hline
+\textbf{Variable} & \textbf{Description} & \textbf{Data Type} & \textbf{Range} & \textbf{Mean} & \textbf{Std. Dev.} \\ \hline
+
+aceites\_y\_grasas &
+CPI -- Oils and fats &
+float64 &
+50.76--157.75 &
+98.43 &
+21.72 \\
+
+aguas\_minerales\_refrescos\_jugos\_de\_frutas\_y\_de\_legumbres &
+CPI -- Non-alcoholic beverages &
+float64 &
+62.38--136.63 &
+102.94 &
+23.26 \\
+
+azucar\_mermelada\_miel\_chocolate\_y\_dulces\_de\_azucar &
+CPI -- Sugar, jams, honey, chocolate and sweets &
+float64 &
+55.45--117.81 &
+95.28 &
+15.49 \\
+
+cafe\_te\_y\_cacao &
+CPI -- Coffee, tea and cocoa &
+float64 &
+47.44--133.67 &
+93.97 &
+21.00 \\
+
+carne &
+CPI -- Meat &
+float64 &
+61.03--114.52 &
+95.27 &
+14.36 \\
+
+frutas &
+CPI -- Fruits &
+float64 &
+62.48--140.20 &
+97.12 &
+16.05 \\
+
+leche\_queso\_y\_huevos &
+CPI -- Milk, cheese and eggs &
+float64 &
+66.05--122.18 &
+96.60 &
+15.31 \\
+
+legumbres\_hortalizas &
+CPI -- Legumes and vegetables &
+float64 &
+64.34--137.87 &
+102.53 &
+16.92 \\
+
+pan\_y\_cereales &
+CPI -- Bread and cereals &
+float64 &
+50.30--126.34 &
+94.12 &
+18.90 \\
+
+pescado &
+CPI -- Fish &
+float64 &
+57.44--118.98 &
+96.56 &
+18.25 \\
+
+productos\_alimenticios\_n\_e\_p &
+CPI -- Food products n.e.c. &
+float64 &
+59.94--147.83 &
+102.04 &
+20.78 \\ \hline
+\end{tabular}
+\end{table*}
+
+All variables were acquired in float64 format, were positive, and had the same monthly time frequency after the dataset was processed. Because of this, they can be utilized in multivariate models and the computation of metrics of relative relevance.
+
+
+The aggregation level is monthly, but with the implementation of datetime, we can apply time series analysis tools such as decomposition, sliding windows, lags, among others. This also ensures that the models to be used respect the temporal order at the time of training and validation.
+
+\subsection{Statistical and Temporal Nature of the Variables}
+
+Firstly, both the \texttt{ipc\_food\_index} and the product sub-indices show a clear long-term upward trend. The aggregate index rose from approximately 60.91 in January 2006 (first recorded data) to 122.25 in October 2025 (last recorded data), representing an increase of approximately 100\%.
+
+
+This pattern is consistent with the increase of food inflation over two decades and illustrates that the series are not stationary.
+
+The graphs of the series and the analysis of their components indicate the presence of trends, seasonality, and irregular components. In categories such as fruits, vegetables, and fish, behavior based on agricultural and fishing cycles can be observed. On the other hand, more processed items such as bread and cereals or sugar, jam, honey, chocolate, and sugar sweets have smoother trajectories, dominated by long-term trends and cost adjustments.
+
+In terms of variability, standard deviations allow us to distinguish products whose inflationary dynamics do not strictly follow the general index. Subgroups such as \texttt{oils and fats}, \texttt{mineral waters, soft drinks, fruit and vegetable juices}, \texttt{coffee, tea, and cocoa}, and \texttt{food products n.e.c.} show deviations of more than 20 points from the index, evidencing high volatility and sensitivity to external events. On the other hand, categories such as meat, \texttt{milk\_cheese\_and\_eggs} and \texttt{sugar\_jam\_honey\_chocolate\_and\_sugar\_sweets} show more moderate variations, as a result of more regulated markets or more stable supply chains.
+
+This analysis is relevant to the project's objectives, as it allows us to identify subgroups that could act as sources of inflationary pressure on the \texttt{CPI\_food\_index}.
+
+
+Another key effect is the occurrence of extreme events.  Peaks in fruits (140.20), vegetables (137.87), and oils and fats (157.75) are correlated with global food price shocks or crises like the COVID-19 pandemic.  These values might be considered as high-impact observations from the standpoint of economic forecasting, and as such, they ought to be incorporated into the model to strengthen its reaction to inflationary stress scenarios.
+
+
+
+Finally, the nature of the variables requires key decisions such as transforming the data so that it behaves more stably. It is also useful to adjust all variables to similar scales so that the model learns without bias or associated problems. Finally, it is important to organize the information into ordered time sequences, since each value depends on the previous ones. These decisions provide the necessary basis for designing the model and meeting the objective of predicting and understanding food inflation.
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.48\textwidth]{imgs/ipc_alimentos_evo.png}
+\caption{From 2006 to 2025, the CPI-Food index grew steadily, with peaks in years such as 2010, 2012, 2020, 2022, and 2024. This behavior shows inflation with fluctuations.}
+\label{fig:ipc_alimentos}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.48\textwidth]{imgs/serie_total.png}
+\caption{Comparing the CPI-Food with the sub-indices, it can be seen that certain groups such as fats, oils, and fruits show a greater deviation with increases. On the other hand, the dairy, meat, bread, and cereal groups follow the general trend.}
+\label{fig:serie_total}
+\end{figure}
+
+% \begin{figure}[H]
+% \centering
+% \includegraphics[width=0.48\textwidth]{imgs/matrix.png}
+% \caption{Pearson correlation matrix between the Food CPI, its sub-indices, and monthly and annual variation rates. A block of strong, positive correlations emerges across product groups and the aggregate index, reflecting the weighted construction of the CPI. This strong interdependence suggests structural multicollinearity and supports the use of non-linear modeling approaches.}
+% \label{fig:matrix}
 % \end{figure}
 
-% \begin{theorem}
-% This is a sample theorem. The run-in heading is set in bold, while
-% the following text appears in italics. Definitions, lemmas,
-% propositions, and corollaries are styled the same way.
-% \end{theorem}
-% %
-% % the environments 'definition', 'lemma', 'proposition', 'corollary',
-% % 'remark', and 'example' are defined in the LLNCS documentclass as well.
-% %
-% \begin{proof}
-% Proofs, examples, and remarks have the initial word in italics,
-% while the following text appears in normal font.
-% \end{proof}
-% For citations of references, we prefer the use of square brackets
-% and consecutive numbers. Citations using labels or the author/year
-% convention are also acceptable. The following bibliography provides
-% a sample reference list with entries for journal
-% articles~\cite{ref_article1}, an LNCS chapter~\cite{ref_lncs1}, a
-% book~\cite{ref_book1}, proceedings without editors~\cite{ref_proc1},
-% and a homepage~\cite{ref_url1}. Multiple citations are grouped
-% \cite{ref_article1,ref_lncs1,ref_book1},
-% \cite{ref_article1,ref_book1,ref_proc1,ref_url1}.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.48\textwidth]{imgs/tendencia_estacionalidad_ruido.png}
+\caption{Additive decomposition of the Food CPI (2006-2025) into observed level, long-term trend, annual seasonality, and residual component.  A steady increasing trend, a distinctly recurrent seasonal pattern, and residuals centered around zero with sporadic spikes in volatility are all seen in the figure.}
+\label{fig:decomposition}
+\end{figure}
 
-% \subsubsection{Acknowledgements} Please place your acknowledgments at
-% the end of the paper, preceded by an unnumbered run-in heading (i.e.
-% 3rd-level heading).
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.48\textwidth]{imgs/distribucion_mensual.png}
+\caption{Most months between 2006 and 2025 show positive median increases in the CPI for food, with March-April and September showing the greatest variation. This demonstrates that there is seasonality and a high risk of inflationary spikes during these periods.}
+\label{fig:monthly_distribution}
+\end{figure}
 
-%
-% ---- Bibliography ----
-%
-% BibTeX users should specify bibliography style 'splncs04'.
-% References will then be sorted and formatted in the correct style.
-%
-% \bibliographystyle{splncs04}
-% \bibliography{mybibliography}
-%
-\begin{thebibliography}{8}
-\bibitem{ref_article1}
-Author, F.: Article title. Journal \textbf{2}(5), 99--110 (2016)
 
-\bibitem{ref_lncs1}
-Author, F., Author, S.: Title of a proceedings paper. In: Editor,
-F., Editor, S. (eds.) CONFERENCE 2016, LNCS, vol. 9999, pp. 1--13.
-Springer, Heidelberg (2016). \doi{10.10007/1234567890}
 
-\bibitem{ref_book1}
-Author, F., Author, S., Author, T.: Book title. 2nd edn. Publisher,
-Location (1999)
 
-\bibitem{ref_proc1}
-Author, A.-B.: Contribution title. In: 9th International Proceedings
-on Proceedings, pp. 1--2. Publisher, Location (2010)
 
-\bibitem{ref_url1}
-LNCS Homepage, \url{http://www.springer.com/lncs}. Last accessed 4
-Oct 2017
+\section{SELECTION OF THE STATISTICAL AND PARAMETRIC MODEL}
+
+Let $\{y_{t}\}_{t=1}^{T}$ denote the monthly Food CPI time series. 
+The objective is to forecast its future values over a horizon of $H$ months 
+(here $H \in \{3,4,5,6\}$), using as input a sliding window of length $L$ 
+containing past observations.
+
+For each time $t$ such that $L \leq t \leq T - H$, the input vector is defined as
+
+\begin{equation}
+\mathbf{z}_{t}
+=
+\left(
+y_{t-L+1},\,
+y_{t-L+2},\,
+\dots,\,
+y_{t}
+\right)
+\end{equation}
+
+
+and the multi-step target vector is
+
+
+\begin{equation}
+\mathbf{y}_{t}^{(f)}
+=
+\left(
+y_{t+1},\,
+y_{t+2},\,
+\dots,\,
+y_{t+H}
+\right)
+\end{equation}
+
+
+Before training, the series is normalized using a standard \emph{z-score} transformation,
+
+\begin{equation}
+\tilde{y}_{t}
+=
+\frac{y_{t} - \mu}{\sigma}
+\end{equation}
+
+
+where $\mu$ and $\sigma$ are the mean and standard deviation computed over 
+the training set. The LSTM model then learns a nonlinear function
+
+\begin{equation}
+\widehat{\mathbf{y}}_{t}^{(f)}
+=
+f_{\text{LSTM}}
+\left(
+\tilde{y}_{t-L+1},\,
+\dots,\,
+\tilde{y}_{t}
+;\,
+\theta
+\right)
+\end{equation}
+
+
+parameterized by $\theta$, which approximates the mapping from the recent history 
+of the Food CPI to its future short-term values.
+
+\subsection{LSTM Architecture}
+
+The network is composed of an LSTM layer that processes the input window $\mathbf{z}_{t}$ 
+sequentially, followed by a dense layer that produces the $H$ simultaneous predictions. 
+At each time step $k$ within the window, the LSTM updates its internal state following 
+the standard gate equations:
+
+
+\begin{align}
+i_{k} &= \sigma\!\left( W_{i} x_{k} + U_{i} h_{k-1} + b_{i} \right), \\
+f_{k} &= \sigma\!\left( W_{f} x_{k} + U_{f} h_{k-1} + b_{f} \right), \\
+o_{k} &= \sigma\!\left( W_{o} x_{k} + U_{o} h_{k-1} + b_{o} \right), \\
+\tilde{c}_{k} &= \tanh\!\left( W_{c} x_{k} + U_{c} h_{k-1} + b_{c} \right), \\
+c_{k} &= f_{k} \odot c_{k-1} \;+\; i_{k} \odot \tilde{c}_{k}, \\
+h_{k} &= o_{k} \odot \tanh(c_{k}).
+\end{align}
+
+where:
+
+\begin{table}[H]
+\caption{Notation Used in the LSTM Formulation}
+\label{tab:lstm_notation}
+\centering
+\begin{tabular}{@{}p{1.5cm} p{6.5cm}@{}}
+\hline
+\textbf{Symbol} & \textbf{Description} \\ \hline
+
+$x_{k}$ & Input at step $k$ (the normalized value $\tilde{y}_{t-L+k}$). \\
+
+$h_{k}$ & Hidden state at step $k$, capturing temporal dependencies in the sequence. \\
+
+$c_{k}$ & Memory (cell) state responsible for long-term information retention. \\
+
+$\sigma(\cdot)$ & Sigmoid activation function used in gate computations. \\
+
+$\odot$ & Element-wise (Hadamard) product applied in gating interactions. \\
+
+$W_{\cdot}, U_{\cdot}, b_{\cdot}$ & Trainable parameters (weights and biases) composing $\theta$. \\ \hline
+
+\end{tabular}
+\end{table}
+
+
+
+Once the window is processed, the final hidden state $h_{L}$ summarizes the relevant 
+information from the recent history. The output layer applies a linear transformation:
+
+\begin{equation}
+\hat{y}_{t}^{(f)} = W_{\text{out}}\, h_{L} + b_{\text{out}},
+\end{equation}
+
+where $W_{\text{out}}$ and $b_{\text{out}}$ are additional parameters.
+This multi-output formulation allows estimating the predictions at 
+$1,\dots,H$ steps ahead simultaneously, without the need to iterate the model autoregressively.
+
+
+The choice of an LSTM is justified because, unlike classical models such as ARIMA or SARIMA, 
+it is capable of capturing long-range dependencies, non-linearities, and memory effects in the presence 
+of trends, seasonality, and shocks, as pointed out by Yang and Guo for inflation series 
+and Riofrío et al. for highly variable Ecuadorian economic series.
+
+
+
+\subsection{Loss function and evaluation metrics}
+The model is trained by minimizing the mean squared error (MSE) loss on the normalized predictions. For a training set with $N$ windows, the loss function is defined as
+
+\begin{equation}
+L_{\mathrm{MSE}}(\theta)
+=
+\frac{1}{N H}
+\sum_{t=1}^{N}
+\sum_{h=1}^{H}
+\left(
+\hat{y}_{t+h}
+-
+\tilde{y}_{t+h}
+\right)^{2}
+\end{equation}
+
+
+where $\hat{y}_{t+h}$ is the prediction and $\tilde{y}_{t+h}$ is the normalized observed value.
+
+Standard measures for economic time-series forecasting are used during evaluation:
+
+\paragraph{Mean Absolute Error (MAE)}
+\begin{equation}
+\mathrm{MAE}
+=
+\frac{1}{M}
+\sum_{j=1}^{M}
+\left|
+y_{j}
+-
+\hat{y}_{j}
+\right|
+\end{equation}
+
+
+\paragraph{Mean Squared Error (MSE)}
+\begin{equation}
+\mathrm{MSE}
+=
+\frac{1}{M}
+\sum_{j=1}^{M}
+\left(
+y_{j}
+-
+\hat{y}_{j}
+\right)^{2}
+\end{equation}
+
+
+\paragraph{Root Mean Squared Error (RMSE)}
+\begin{equation}
+\mathrm{RMSE} = \sqrt{\mathrm{MSE}}
+\end{equation}
+
+
+where $M$ is the test set's total number of observations. These indicators enable measuring the level of improvement and comparing the LSTM's performance with benchmark models.
+
+
+\subsection{Optimization Procedure}
+
+The parameters $\theta$ are adjusted using stochastic gradient descent with the Adam optimizer, widely used in recurrent networks due to its ability to adapt the learning rate to each parameter. In general terms, the update follows the rule
+
+\begin{equation}
+\theta_{k+1}
+=
+\theta_{k}
+-
+\eta_{k}\,\nabla_{\theta} \, L_{\mathrm{MSE}}(\theta_{k})
+\end{equation}
+
+
+where $\eta_{k}$ is an effective learning rate adjusted internally by Adam based on moving averages of the gradients and their squares.
+
+Training is carried out respecting the temporal structure (without random shuffling) and using a chronological partition into training, validation, and testing, which prevents information leakage into the future and maintains the consistency of the prediction problem.
+
+
+
+\subsection{Nonlinear Regression Model for Identifying Pressure Points}
+
+
+Complementing the forecast, a second model is defined to answer the question: which food subgroups best explain the variation in the CPI-Food. To do this, we work with the monthly variation rates of the aggregate index and its sub-indices.
+
+\subsection{Formulation of the Variables}
+
+Let
+\begin{equation}
+\Delta y_{t}
+=
+\frac{y_{t} - y_{t-1}}{y_{t-1}}
+\end{equation}
+
+be the monthly inflation rate of the Food CPI, and
+\begin{equation}
+\Delta x_{j t}
+=
+\frac{x_{j,t} - x_{j,t-1}}{x_{j,t-1}},
+\qquad
+j = 1,\ldots,p
+\end{equation}
+
+the monthly variations of each food subindex. A nonlinear regression model is then constructed as
+\begin{equation}
+\Delta y_{t}
+=
+f_{\mathrm{RF}}(\Delta x_{1 t},\ldots,\Delta x_{p t})
++
+\varepsilon_{t}
+\end{equation}
+
+where $f_{\mathrm{RF}}$ is a function approximated by a Random Forest regressor and $\varepsilon_{t}$ is the error term.
+
+\subsection*{3.2 Random Forest Model and Loss Function}
+
+
+A regression Random Forest consists of a set of $B$ decision trees 
+$\{T_{b}\}_{b=1}^{B}$, each trained on a bootstrap sample of the data and with random subsets of variables in each partition. The forest prediction for an input vector $\Delta x_{t}$ is defined as the average of the predictions of the individual trees:
+
+\begin{equation}
+\label{eq:rf_prediction}
+\Delta \hat{y}_{t}
+=
+f_{\mathrm{RF}}(\Delta x_{t})
+=
+\frac{1}{B}
+\sum_{b=1}^{B}
+T_{b}(\Delta x_{t})
+\end{equation}
+
+
+Forest training seeks to minimize the MSE of $\Delta y_{t}$ on the training set, analogous to LSTM but using recursive partitioning rules in each tree, selecting at each node the variable and cutoff point that most reduce the intra-node sum of squares.
+
+
+
+
+
+
+
+\section{Results and Proposed Solution to the Identified Problem}
+
+\subsection{LSTM Model}
+
+The LSTM model indicates that Ecuadorian food inflation, despite its volatility and the presence of shocks, is partially predictable in the short term.
+
+Models with long term memory can better capture trends, persistence, and seasonality useful temporal patterns in the CPI-Food throughout its history than traditional linear structures.
+
+The interpretation by horizon also confirms that the predictive power is decreasing but stable: errors increase gradually when moving from 3 to 6 months, without observing explosive deviations or total loss of structure.
+
+% **Instrumento de alerta temprana** que permite a las instituciones anticipar escenarios de presión inflacionaria en el corto plazo y ajustar con algo de anticipación transferencias, subsidios o políticas de inventario.
+
+This interpretation is supported by an analysis of the LSTM residuals. The worst mistakes are concentrated in times when economic reality diverges from past trends; instead, this indicates the inherent limit of any plan based on historical data rather than a weakness in the model and highlights the necessity of supplementing quantitative forecasting with qualitative data on anticipated shocks (weather, international conflict, domestic changes, etc.).
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.48\textwidth]{modelolstm/lstm_predictions.png}
+\caption{comparison of the LSTM model predictions on the test set with the actual Food CPI values.  The projected series roughly reproduces both the level and the trend of the index, displaying moderate errors even during periods of heightened recent fluctuation.}
+\label{fig:predictions}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.48\textwidth]{modelolstm/lstm_future_predictions.png}
+\caption{The LSTM model is used to forecast the Food CPI six months in advance.  The red dashed line, which indicates a high level of the index with a little initial increase followed by stabilization, contrasts with the blue line, which depicts the recent historical trajectory.}
+\label{fig:future_prediction}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.48\textwidth]{modelolstm/comparacion_predicciones_2023.png}
+\caption{Comparison between estimates of the CPI-Food subindex, made using an LSTM model, and the actual values published by INEC over a six-month period in 2023.  The historical data used for training, the starting point of the prediction, and the differences between what was predicted and what was actually observed are shown, as well as the evaluation metrics that demonstrate the model's accurate performance.
+}
+\label{fig:future_prediction}
+\end{figure}
+
+\subsection{Random Forest Model}
+
+By focusing on explaining how monthly variations in the CPI-Food index arise from changes in the sub-indices, the Random Forest model offers a complementary perspective.  This non linear approach, when there are drastic changes in certain groups, allows for more accurate calculations than the linear model. This indicates the presence of threshold effects and complex links between variables that require non linear separations to be represented correctly.
+
+When it comes to understanding monthly inflation, oils and fats, fruits, vegetables and legumes, and unidentified food items typically rank among the most important variables.
+
+Different groups contribute differently to fluctuations in the CPI-Food index. Some groups show monthly variations that have a greater weight in the overall index. On the other hand, there are groups such as meat and dairy products with a lower standard deviation and more uniform trajectories.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.48\textwidth]{modelolstm/rf_subproduct_incidence.png}
+\caption{The aggregate importance of food subgroups in the Random Forest model to explain the variation in the CPI-Food index shows that bread and cereals, mineral water/soft drinks/juices, and meat account for the largest share of the impact, while fruits, legumes, fish, and oils and fats show a smaller overall contribution over the 2006–2025 period.
+}
+\label{fig:importancia_productos}
+\end{figure}
+
+\subsection{Metrics and Summary of Results}
+
+\begin{table}[H]
+\caption{Performance Metrics of the LSTM Model on the Test Set}
+\label{tab:lstm_metrics}
+\centering
+\begin{tabular}{@{}p{3cm} p{2cm} p{3cm}@{}}
+\hline
+\textbf{Metric} & \textbf{Value} & \textbf{Interpretation} \\ \hline
+
+MSE & 15.89 & Mean squared error. Heavily penalizes large deviations. \\
+
+MAE & 1.15 & Model deviates 1.15 index points. \\
+
+RMSE & 1.18 & The average magnitude of the error is similar to the actual level of the index. \\
+
+MAPE & 1.01\% & Average percentage deviation; excellent performance $<$5\%. \\ \hline
+
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\caption{Food CPI Forecast for the Next Six Months According to the LSTM Model}
+\label{tab:lstm_forecast}
+\centering
+\begin{tabular}{@{}p{2cm} p{2.3cm} p{4cm}@{}}
+\hline
+\textbf{Month} & \textbf{Prediction} & \textbf{Interpretation} \\ \hline
+
+1 & 123.12 & Stable start, no abrupt variation. \\
+
+2 & 123.25 & Beginning of a mild inflationary acceleration. \\
+
+3 & 123.40 & Highest point within the short-term forecast horizon. \\
+
+4 & 123.97 & Persistence at the maximum level; inflationary plateau. \\
+
+5 & 124.25 & Beginning of a slight correction. \\
+
+6 & 123.42 & High and stable level; persistent inflationary pressure. \\ \hline
+
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\caption{Performance Comparison Between LSTM and Random Forest}
+\label{tab:model_comparison}
+\centering
+\begin{tabular}{@{}p{2.5cm} p{1cm} p{1cm} p{3cm}@{}}
+\hline
+\textbf{Metric} & \textbf{LSTM} & \textbf{RF} & \textbf{Interpretation} \\ \hline
+
+RMSE &
+1.18 &
+9.91 &
+The LSTM reduces the error to less than half. \\
+
+MAPE &
+1.01\% &
+7.83\% &
+Higher relative accuracy for the LSTM ($<$5\%). \\
+
+R\textsuperscript{2} (validation) &
+Positive &
+Negative &
+RF fails to capture temporal dynamics. \\ \hline
+
+\end{tabular}
+\end{table}
+
+
+
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.48\textwidth]{modelolstm/models_comparison.png}
+\caption{Comparison of error metrics between the LSTM model and the Random Forest model in the test set. It is observed that the LSTM presents substantially lower errors in all metrics (MSE, MAE, RMSE and MAPE), which confirms its superiority as a forecasting model for the Food CPI, while the Random Forest is used only for explanatory purposes.
+}
+\label{fig:comparacion_metricas}
+\end{figure}
+
+
+Although Random Forest can not achieve the predictive accuracy of LSTM, it gives a key analytical contribution: it allows us to discover which subgroups of the CPI-Food explain most of its volatility.  While other groups show a secondary or marginal occurrence, the model clearly concentrates on a few key items.  This shows that a small number of categories govern the index's dynamics, which are further supported by a significant autoregressive component.  In general, Random Forest is a helpful tool for comprehending the internal structure and elements that influence food inflation, but it is not appropriate as a final forecasting model.
+
+\begin{table}[H]
+\caption{Statistical Summary of the Random Forest Model: Metrics and Relative Importances}
+\label{tab:rf_summary}
+\centering
+\begin{tabular}{@{}p{3.2cm} p{2cm} p{3cm}@{}}
+\hline
+\textbf{Variable / Metric} & \textbf{Value} & \textbf{Interpretation} \\ \hline
+
+RMSE & 9.91 & Low predictive accuracy compared to the LSTM. \\
+
+MAPE & 7.83\% & High relative error for economic forecasting. \\
+
+Bread and cereals & 17.07\% & Main contributor to the Food CPI. \\
+
+Non-alcoholic beverages &
+16.18\% &
+Second most influential category. \\
+
+Meat & 14.61\% & High structural relevance. \\
+
+General CPI & 13.83\% & Indicates a strong autoregressive component. \\
+
+Coffee, cocoa, sugar, n.e.c. &
+8--9\% &
+Medium, secondary influence. \\
+
+Fruits, vegetables, fish &
+1.2--1.5\% &
+Low impact; variations diluted by seasonality. \\ \hline
+
+\end{tabular}
+\end{table}
+
+
+\section{Implications}
+
+The results of the study have obvious consequences for both the analysis of food inflation and its operational management. First, the LSTM's strong performance indicates that the CPI-Food demonstrates sufficiently consistent temporal patterns to allow for trustworthy short-term forecasts.  This makes it possible for public entities to foresee situations and take preventative action instead of just responding.
+
+Secondly, the incidence analysis using the Random Forest model shows that the variation in the index is concentrated in a few high-impact items. On the other hand, there are groups that have more local or seasonal effects. This asymmetry indicates that macroeconomic surveillance should focus on the most important sub-products, but without neglecting the social relevance of fresh items with less statistical weight.
+
+Finally, the integration of LSTM for forecasting and Random Forest for incidence structure forms the basis of an early warning system. This framework can help institutions such as MIES, sectoral ministries, and local governments to plan support policies, public procurement, and logistical interventions further in advance, and allows the private sector to optimize inventories, prices, and critical inputs in the face of expected variations in food inflation.
+
+
+\subsection{Conclutions}
+The results suggest that LSTM models can estimate short-term food inflation with excellent accuracy.  The model accurately replicates the CPI-Food's steady temporal trends its recent track, giving a mathematical foundation for anticipating its evolution over three and six months and significantly surpassing linear techniques.
+
+The CPI-Food's dynamics are largely focused in a small number of subcomponents, according to the variable significance analysis.  Items such as bread and cereals, non-alcoholic beverages, and meat comprise the structural core of the index, while other groups have a more limited or seasonal impact.  This makes it easy to determine the items whose price growth is most crucial for collective behavior.
+
+The integration of LSTM as a forecasting model and Random Forest as a structural analysis tool demonstrates that it is possible to identify sources of inflationary pressure in advance. The combination of short-term projections and incidence maps by subcategory forms the basis of an early warning system that facilitates planning, prevention, and the formulation of more proactive food security policies.
+
+
+\subsection{Recomendations}
+It is recommended to institutionalize a monthly CPI-Food forecasting system based on regular upgrades of the LSTM model with recent INEC data.  To assist with budget management and public program planning, this system should produce estimates for the next three and six months along with confidence intervals.
+
+It is recommended that the subgroups with the highest prevalence within the index be monitored first, specifically meat, bread and cereals, and non-alcoholic drinks.  By creating specialized monitoring dashboards, price fluctuations and related risk variables might be systematically observed, focusing analytical attention on the items with the biggest structural influence.
+
+It is proposed that the outputs of the LSTM and Random Forest be integrated into the decision-making processes of social, agricultural, and supply institutions.   Preventive changes to food subsidies, government procurement, logistical agreements, or interventions in important supply chains might be possible if inflationary pressures were anticipated.
+
+% Es aconsejable fortalecer las capacidades internas en análisis de datos y mantenimiento de modelos. Un equipo técnico dedicado debería encargarse de actualizar la base de datos, recalibrar periódicamente los modelos y evaluar la estabilidad de sus métricas, garantizando que el sistema siga siendo confiable ante posibles cambios metodológicos o estructurales.
+
+Finally, it is recommended to explore extensions of the analysis in future studies, applying the modeling framework to regional or population disaggregations, as well as incorporating additional macroeconomic variables. This would allow for capturing territorial heterogeneities and improving the sensitivity of the model to relevant external factors.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\newpage
+\begin{center}
+\begin{table*}
+\caption{Bibliographic References}
+\label{tab:table1}
+\begin{tabular}{@{}p{6cm} p{2.5cm} p{2cm} p{7cm}@{}} \hline
+Title & Authors/Year & Metrics & Findings \\ \hline
+
+Forecasting the Consumer Price Index: A Comparative Study of Machine Learning Methods 
+& Sibai et al., 2024 
+& MSE, RMSE, MAE, R$^2$
+& MLP, KNN, and RF deliver strong performance for CPI projections in Saudi Arabia, particularly for horizons shorter than two years. \\
+
+Basic Food Basket Monthly Price (Southern Bahia)
+& Torres et al., 2020
+& RMSE
+& The RNN model provides high predictive accuracy (94\%) for monthly basic-basket prices, especially for forecasts within a one-year window. \\
+
+Analyzing the Ecuadorian Purchasing Power
+& Riofrío, 2024
+& MAPE
+& For Ecuador’s Basic Basket, SARIMA, MLP, and SVR are evaluated; SVR provides the most reliable results, highlighting clear yearly seasonal patterns. \\
+
+Inflation Prediction Method Based on Deep Learning 
+& Yang \& Guo, 2021
+& MSE, MAPE, SMAPE
+& Deep learning architectures such as LSTM and GRU more effectively model long-term temporal relationships than ARIMA or BVAR benchmarks. \\
+
+Forecasting the CPI of Ecuador 
+& Riofrío et al., 2020
+& MAPE
+& SVR and LSTM yield robust short-run CPI predictions for Ecuador, typically performing best for periods under 12 months. \\
+
+Forecasting the CPI of Ecuador (Darts, FFT, 4Theta)
+& Riofrío, Infante \& Hernández, 2023
+& MAE
+& Contemporary forecasting tools outperform traditional techniques when seasonality is weak, demonstrating greater adaptability in CPI-related series. \\
+
+Time Series Forecasting Using ANN
+& Nannapaneni \& Kulkarni, 2023
+& MSE
+& ANN and LSTM show strong suitability for nonlinear price dynamics and can enhance performance when integrated with classical statistical models. \\
+
+Adaptive food price forecasting improves public information in times of rapid economic change
+& MacLachlan et al., 2025
+& MAE, RMSE
+& Monthly food-basket inflation is successfully modeled using SARIMA/SARIMAX with macroeconomic factors, with model selection automated via BIC each cycle. \\
+
+A Comparative Analysis of Traditional SARIMA and Machine Learning Models for CPI Data Modelling in Pakistan
+& Qureshi et al., 2023
+& RMSE, MSE, MAPE
+& Machine-learning frameworks—especially a deep 20-layer MLP—exhibit superior forecasting accuracy over SARIMA and NNAR models in Pakistan’s CPI analysis.\\
+
+Food inflation and monetary policy in emerging economies
+& Sami \& Makun, 2024
+& 2SLS, OLS
+& Food inflation in emerging economies shows heightened volatility and reacts strongly to monetary-policy adjustments that consistently reduce inflationary pressures.\\
+
+Forecasting CPI inflation components with hierarchical recurrent neural networks
+& Barkan et al., 2024
+& RMSE, MSE, MAE
+& A hierarchical RNN with GRUs and Bayesian priors strengthens sub-index forecasting by leveraging shared information across CPI component levels.\\
+
+The benefits of forecasting inflation with machine learning: New evidence
+& Naghi et al., 2024
+& RMSE, MAE, MAD
+& No single model dominates universally; performance varies across countries and time, with RF, XGBoost, LightGBM, and penalized regression excelling under specific conditions.\\
+
+The consumer price index prediction using machine learning approaches: Evidence from the United States
+& Nguyen et al., 2023
+& MAE, RMSE, MAPE \& R$^2$
+& Models using energy and monetary variables show strong results, with MARS obtaining the lowest forecasting error on the testing set.\\
+
+\hline
+\end{tabular}
+\end{table*}
+
+
+\end{center}
+
+
+\newpage
+\begin{thebibliography}{00}
+\bibitem{b1} F. Sibai, A. El-Moursy, and A. Sibai, ``Forecasting the consumer price index: A comparative study of machine learning methods,'' Int. J. Comput. Digit. Syst., vol. 15, no. 1, pp. 1--12, 2024.
+
+\bibitem{b2} M. A. S. Torres, D. S. Dominguez, M. S. Marinho, D. R. Silva, and H. C. Almeida, ``Basic food basket monthly price of southern Bahia cities: A time series forecasting with deep learning using a recurrent neural network approach,'' Rev. Cereus, vol. 12, no. 4, pp. 146--159, Dec. 2020.
+
+\bibitem{b3} J. Riofrío, ``Analyzing the Ecuadorian purchasing power: Family income vs. basic market basket,'' Sapienza: Int. J. Interdiscip. Stud., vol. 5, no. 1, art. e24005, 2024, doi: 10.51798/sijis.v5i1.724.
+
+\bibitem{b4} C. Yang and S. Guo, ``Inflation prediction method based on deep learning,'' Comput. Intell. Neurosci., vol. 2021, art. 1071145, 2021, doi: 10.1155/2021/1071145.
+
+\bibitem{b5} J. Riofrío, O. Chang, E. J. Revelo-Fuelagán, and D. H. Peluffo-Ordóñez, ``Forecasting the consumer price index (CPI) of Ecuador: A comparative study of predictive models,'' Int. J. Adv. Sci. Eng. Inf. Technol., vol. 10, no. 3, pp. 1078--1084, Jun. 2020.
+
+\bibitem{b6} J. Riofrio, S. Infante, and A. Hernández, ``Forecasting the consumer price index of Ecuador using classical and advanced time series models,'' in Information and Communication Technologies. TICEC 2023, Communications in Computer and Information Science, vol. 1885, J. Maldonado-Mahauad, J. Herrera-Tapia, J. L. Zambrano-Martínez, and S. Berrezueta, Eds. Cham, Switzerland: Springer, 2023, pp. 128--144, doi: $10.1007/978-3-031-45438-7_9$.
+
+\bibitem{b7}
+M. J. MacLachlan, M. K. Adjemian, X. Etienne, M. Sweitzer, R. Volpe III, and W. Zeng,
+``Adaptive food price forecasting improves public information in times of rapid economic change,''
+Nat. Commun., vol. 16, no. 1, Art. no. 6282, 2025.
+
+\bibitem{b8}
+M. Qureshi, A. Khan, M. Daniyal, K. Tawiah, and Z. Mehmood,
+``A comparative analysis of traditional SARIMA and machine learning models for CPI data modelling in Pakistan,''
+Appl. Comput. Intell. Soft Comput., vol. 2023, Art. ID 3236617, 2023.
+
+\bibitem{b9}
+J. Sami and K. Makun,
+``Food inflation and monetary policy in emerging economies,''
+J. Asian Econ., vol. 95, Art. no. 101817, 2024.
+
+\bibitem{b10}
+O. Barkan, J. Benchimol, I. Caspi, E. Cohen, A. Hammer, and N. Koenigstein,
+``Forecasting CPI inflation components with hierarchical recurrent neural networks,''
+Int. J. Forecast., vol. 39, no. 3, pp. 1145--1162, 2023.
+
+\bibitem{b11}
+A. A. Naghi, E. O'Neill, and M. Danielova Zaharieva,
+``The benefits of forecasting inflation with machine learning: New evidence,''
+J. Appl. Econometrics, vol. 39, no. 7, pp. 1321--1331, 2024.
+
+\bibitem{b12}
+T. T. Nguyen, H. G. Nguyen, J. Y. Lee, Y. L. Wang, and C. S. Tsai,
+``The consumer price index prediction using machine learning approaches: Evidence from the United States,''
+Heliyon, vol. 9, no. 10, 2023.
+
+
+
 \end{thebibliography}
+
+
 \end{document}

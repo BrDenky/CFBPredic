@@ -1,0 +1,17 @@
+{
+    "metadata": {
+        "fecha_ejecucion": "2025-12-03 21:18:52",
+        "modelo": "C:\\Users\\ASUS\\Desktop\\CFBPredic\\models\\lstm_model.h5",
+        "ultima_fecha_conocida": "2025-10-01",
+        "ultimo_valor_conocido": 122.2479465,
+        "meses_predichos": 6
+    },
+    "metricas_evaluacion": {
+        "MSE": 27.596779032321535,
+        "MAE": 5.026862116567098,
+        "RMSE": 5.253263655321474,
+        "MAPE": 4.195973957823366
+    },
+    "predicciones": [
+        {
+            "Fecha": 

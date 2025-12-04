@@ -53,10 +53,11 @@ class DataPreprocessor:
         print(f"Rango de fechas: {self.df.index.min()} a {self.df.index.max()}")
         
         return self.df
-    
+
     def create_lag_features(self, n_lags: int = 12) -> pd.DataFrame:
         """
-        Crea lag features para capturar patrones temporales.
+        Crea lag features para capturar patrones temporales de forma eficiente
+        (sin fragmentar el DataFrame con asignaciones columna a columna).
         
         Args:
             n_lags: Número de lags a crear (por defecto 12 meses)
@@ -64,24 +65,40 @@ class DataPreprocessor:
         Returns:
             DataFrame con lag features añadidos
         """
-        df_lagged = self.df.copy()
+        if self.df is None:
+            raise ValueError("Primero debes llamar a load_data() para inicializar self.df")
         
-        # Crear lags para el IPC-Alimentos (variable objetivo)
+        # Copia base de los datos originales
+        df_base = self.df.copy()
+
+        # Diccionario donde construiremos todas las columnas de lags
+        lag_data = {}
+
+        # 1. Lags para el IPC-Alimentos (variable objetivo)
+        target_col = 'ipc_alimentos_index'
         for i in range(1, n_lags + 1):
-            df_lagged[f'ipc_lag_{i}'] = df_lagged['ipc_alimentos_index'].shift(i)
-        
-        # Crear lags para cada subproducto
+            lag_data[f'ipc_lag_{i}'] = df_base[target_col].shift(i)
+
+        # 2. Lags para cada subproducto (todas las otras columnas)
         for col in self.feature_columns:
             for i in range(1, n_lags + 1):
-                df_lagged[f'{col}_lag_{i}'] = df_lagged[col].shift(i)
-        
-        # Eliminar filas con NaN (primeros n_lags meses)
-        df_lagged = df_lagged.dropna()
-        
-        print(f"Lag features creados: {n_lags} lags")
+                lag_data[f'{col}_lag_{i}'] = df_base[col].shift(i)
+
+        # Crear un DataFrame con todas las columnas lag de una sola vez
+        lag_df = pd.DataFrame(lag_data, index=df_base.index)
+
+        # Concatenar original + lags
+        df_lagged = pd.concat([df_base, lag_df], axis=1)
+
+        # Eliminar filas con NaN (primeros n_lags meses) y de paso defragmentar
+        df_lagged = df_lagged.dropna().copy()
+
+        print(f"Lag features creados: {n_lags} lags por columna (target + {len(self.feature_columns)} subproductos)")
         print(f"Datos después de eliminar NaN: {df_lagged.shape[0]} filas")
-        
+        print(f"Número total de columnas después de lags: {df_lagged.shape[1]}")
+
         return df_lagged
+
     
     def split_data(self, df: pd.DataFrame, train_ratio: float = 0.8) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """

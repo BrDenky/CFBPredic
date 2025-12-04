@@ -1,15 +1,3 @@
-"""
-Script principal para entrenar y evaluar modelos LSTM y Random Forest.
-
-Este script orquesta todo el pipeline:
-1. Preprocesamiento de datos
-2. Entrenamiento de modelo LSTM
-3. Entrenamiento de modelo Random Forest
-4. Evaluación de ambos modelos
-5. Generación de visualizaciones
-6. Guardado de resultados
-"""
-
 import os
 import sys
 import numpy as np
@@ -32,6 +20,13 @@ from evaluation import (
 
 def main():
     """Función principal que ejecuta todo el pipeline."""
+
+    # ---------------------------------------------------------------------
+    # Parámetros globales del experimento (mantener coherentes)
+    # ---------------------------------------------------------------------
+    N_LAGS = 12         # n_lags usados en el preprocesamiento
+    TRAIN_RATIO = 0.8   # proporción de datos para entrenamiento
+    TIMESTEPS = 12      # longitud de ventana para LSTM
     
     print("\n" + "=" * 80)
     print("PIPELINE DE MODELOS LSTM Y RANDOM FOREST PARA IPC-ALIMENTOS")
@@ -56,9 +51,9 @@ def main():
     print("=" * 80)
     
     data = prepare_data_for_models(
-        n_lags=12,
-        train_ratio=0.8,
-        lstm_timesteps=12
+        n_lags=N_LAGS,
+        train_ratio=TRAIN_RATIO,
+        lstm_timesteps=TIMESTEPS
     )
     
     # Cargar datos originales para fechas
@@ -67,6 +62,15 @@ def main():
         parse_dates=['date'],
         index_col='date'
     )
+    
+    # Cálculo consistente de índices de train / test en la serie original
+    n_total = len(df_original)
+    n_lstm = n_total - N_LAGS                  # longitud de df_lstm = df[N_LAGS:]
+    split_idx_lstm = int(n_lstm * TRAIN_RATIO) # número de muestras de train en df_lstm
+    
+    # Índice (en df_original) donde empieza el conjunto de prueba para LSTM / RF
+    # df_lstm empieza en posición N_LAGS, por tanto el test empieza en:
+    test_start_idx = N_LAGS + split_idx_lstm   # ejemplo: 12 + 180 = 192
     
     # =========================================================================
     # 2. MODELO LSTM
@@ -77,44 +81,43 @@ def main():
     
     # Inicializar modelo LSTM
     lstm_predictor = LSTMPredictor(
-        timesteps=12,
+        timesteps=TIMESTEPS,
         n_features=data['lstm']['X_train'].shape[2]
+        # seed por defecto = 42 en la clase
     )
     
-    # Construir arquitectura
-    # Tuning de hiperparámetros
-    print("\nIniciando búsqueda de hiperparámetros...")
-    tuning_results = lstm_predictor.hyperparameter_tuning(
-        X_train=data['lstm']['X_train'],
-        y_train=data['lstm']['y_train'],
-        param_grid={
-            'lstm_units': [32, 50, 64],
-            'dropout_rate': [0.1, 0.2],
-            'learning_rate': [0.01, 0.001]
-        },
-        n_splits=3
-    )
+    # Construir modelo con arquitectura mejorada y ajustes para capturar fluctuaciones
+    print("\nConstruyendo modelo LSTM con arquitectura optimizada...")
+    print("Hiperparámetros optimizados para captura de fluctuaciones:")
+    print("  - Capas LSTM: 128 -> 64 -> 32")
+    print("  - Dropout reducido: 0.15 -> 0.1 -> 0.05")
+    print("  - Learning rate: 0.0005")
+    print("  - Loss function: MSE (mejor para fluctuaciones)")
+    print("  - Batch Normalization: Desactivado (permite más variación)")
     
-    best_params = tuning_results['best_params']
-    
-    # Construir arquitectura con mejores parámetros
     lstm_predictor.build_model(
-        lstm_units_1=best_params['lstm_units'],
-        lstm_units_2=best_params['lstm_units'],
-        dropout_rate=best_params['dropout_rate'],
-        learning_rate=best_params['learning_rate']
+        lstm_units_1=128,
+        lstm_units_2=64,
+        lstm_units_3=32,
+        dropout_rate_1=0.15,  # Reducido de 0.2
+        dropout_rate_2=0.1,   # Reducido de 0.15
+        dropout_rate_3=0.05,  # Reducido de 0.1
+        learning_rate=0.0005,
+        use_huber=False,      # MSE en lugar de Huber
+        use_batch_norm=False  # Desactivado para permitir variación
     )
     
-    # Entrenar modelo
+    # Entrenar modelo con hiperparámetros mejorados
+    print("\nEntrenando modelo LSTM...")
     lstm_history = lstm_predictor.train_model(
         X_train=data['lstm']['X_train'],
         y_train=data['lstm']['y_train'],
         X_val=data['lstm']['X_test'],
         y_val=data['lstm']['y_test'],
-        epochs=100,
-        batch_size=32,
-        patience=10,
-        model_path=os.path.join(models_dir, 'lstm_model.h5')
+        epochs=200,
+        batch_size=16,
+        patience=20,
+        model_path=os.path.join(models_dir, 'lstm_model_improved.h5')
     )
     
     # Evaluar modelo LSTM
@@ -137,15 +140,17 @@ def main():
     y_test_lstm_orig = data['preprocessor'].inverse_transform_target(data['lstm']['y_test'])
     y_pred_lstm_orig = data['preprocessor'].inverse_transform_target(y_pred_lstm)
     
-    # Obtener fechas de test (aproximadas)
-    split_idx = int(len(df_original) * 0.8)
-    test_dates = df_original.index[split_idx + 12:]  # +12 por timesteps
-    test_dates = test_dates[:len(y_test_lstm_orig)]  # Ajustar longitud
+    # Fechas correctas para las etiquetas de prueba del LSTM
+    # y_test_lstm se obtiene tras crear secuencias con TIMESTEPS, por lo que
+    # las etiquetas empiezan TIMESTEPS meses después del inicio del test.
+    test_dates_full = df_original.index[test_start_idx:]              # todas las fechas del bloque de test
+    test_dates_lstm = test_dates_full[TIMESTEPS:]                     # saltar los primeros TIMESTEPS
+    test_dates_lstm = test_dates_lstm[:len(y_test_lstm_orig)]         # recortar a la longitud real
     
     plot_predictions_vs_actual(
         y_true=y_test_lstm_orig,
         y_pred=y_pred_lstm_orig,
-        dates=test_dates,
+        dates=test_dates_lstm,
         title='LSTM: Predicciones vs Valores Reales (Conjunto de Prueba)',
         save_path=os.path.join(figs_dir, 'lstm_predictions.png')
     )
@@ -158,17 +163,18 @@ def main():
         save_path=os.path.join(figs_dir, 'lstm_residuals.png')
     )
     
-    # Predicción futura (3-6 meses)
-    print("\nGenerando predicciones futuras (3-6 meses)...")
+    # Predicción futura (6 meses) con parámetros mejorados
+    print("\nGenerando predicciones futuras (6 meses)...")
     
     # Obtener la última secuencia real disponible (hasta la fecha más reciente)
-    # Esto asegura que la predicción comience desde el último dato conocido
-    last_sequence = data['preprocessor'].get_last_sequence_scaled(timesteps=12)
+    last_sequence = data['preprocessor'].get_last_sequence_scaled(timesteps=TIMESTEPS)
     
     future_predictions = lstm_predictor.predict_future(
         last_sequence=last_sequence,
         n_steps=6,
-        preprocessor=data['preprocessor']
+        preprocessor=data['preprocessor'],
+        trend_window=6,
+        damping_factor=0.7
     )
     
     plot_future_predictions(
@@ -218,7 +224,7 @@ def main():
     metrics_rf = rf_model.evaluate_model(
         X_test=data['rf']['X_test'],
         y_test=data['rf']['y_test'],
-        preprocessor=data['preprocessor']
+        preprocessor=data['preprocessor']  # si tu RF usa scaler_target_rf, ajústalo ahí
     )
     
     # Visualizaciones Random Forest
@@ -244,11 +250,15 @@ def main():
     
     # Predicciones vs valores reales (RF)
     y_pred_rf = rf_model.predict(data['rf']['X_test'])
-    y_test_rf_orig = data['preprocessor'].inverse_transform_target(data['rf']['y_test'].reshape(-1, 1))
-    y_pred_rf_orig = data['preprocessor'].inverse_transform_target(y_pred_rf.reshape(-1, 1))
+    y_test_rf_orig = data['preprocessor'].inverse_transform_target(
+        data['rf']['y_test'].reshape(-1, 1)
+    )
+    y_pred_rf_orig = data['preprocessor'].inverse_transform_target(
+        y_pred_rf.reshape(-1, 1)
+    )
     
-    test_dates_rf = df_original.index[split_idx:]
-    test_dates_rf = test_dates_rf[:len(y_test_rf_orig)]
+    # Fechas correctas para el test de RF
+    test_dates_rf = df_original.index[test_start_idx:test_start_idx + len(y_test_rf_orig)]
     
     plot_predictions_vs_actual(
         y_true=y_test_rf_orig,
@@ -301,7 +311,7 @@ def main():
     print("=" * 80)
     print("\n📁 Archivos generados:")
     print(f"  Modelos:")
-    print(f"    - {os.path.join(models_dir, 'lstm_model.h5')}")
+    print(f"    - {os.path.join(models_dir, 'lstm_model_improved.h5')}")
     print(f"    - {os.path.join(models_dir, 'rf_model.pkl')}")
     print(f"\n  Resultados:")
     print(f"    - {os.path.join(results_dir, 'metrics.json')}")
