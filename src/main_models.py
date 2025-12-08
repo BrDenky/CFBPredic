@@ -58,7 +58,7 @@ def main():
     
     # Cargar datos originales para fechas
     df_original = pd.read_csv(
-        os.path.join(base_dir, 'src', 'data.csv'),
+        os.path.join(base_dir, 'data', 'processed', 'data.csv'),
         parse_dates=['date'],
         index_col='date'
     )
